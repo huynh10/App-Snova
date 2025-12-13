@@ -873,3 +873,462 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {activeTab === 'tasks' && (
+          <div className="space-y-4">
+            <div className="relative">
+              <input type="text" placeholder={currentUser.role === UserRole.MANAGER ? "Tìm công việc toàn công ty..." : "Tìm trong việc của tôi..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-navy-800 outline-none text-sm bg-white" />
+              <IconSearch className="absolute left-4 top-4 w-4 h-4 text-gray-400" />
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+               <div className="flex-1">
+                 <label className="text-[10px] text-gray-500 font-bold px-1 uppercase block mb-1">Từ ngày</label>
+                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full text-xs text-gray-700 font-medium outline-none p-1 bg-gray-50 rounded" />
+               </div>
+               <div className="hidden sm:block w-px h-10 bg-gray-200 self-center"></div>
+               <div className="flex-1">
+                 <label className="text-[10px] text-gray-500 font-bold px-1 uppercase block mb-1">Đến ngày</label>
+                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full text-xs text-gray-700 font-medium outline-none p-1 bg-gray-50 rounded" />
+               </div>
+               {(startDate || endDate) && <button onClick={resetFilters} className="p-2 text-gray-400 hover:text-red-500 self-center" title="Xóa lọc">&times;</button>}
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+              {(['ALL', TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, 'OVERDUE'] as const).map((status) => (
+                <button key={status} onClick={() => setStatusFilter(status)} className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${statusFilter === status ? 'bg-navy-800 text-white shadow-md transform scale-105' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
+                  {status === 'ALL' ? 'Tất cả' : status === 'OVERDUE' ? 'Quá hạn' : status === TaskStatus.TODO ? 'Chờ xử lý' : status === TaskStatus.IN_PROGRESS ? 'Đang làm' : 'Đã xong'}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTasks.map(task => (
+                <TaskCard 
+                  key={task.id} 
+                  task={task} 
+                  currentUser={currentUser}
+                  allUsers={users}
+                  onStatusAction={handleStatusClick}
+                  onReassign={setReassignTask}
+                  onEdit={handleEditTask}
+                  onViewImage={setLightboxImage}
+                  onViewDetail={() => setViewingTask(task)}
+                />
+              ))}
+            </div>
+            {filteredTasks.length === 0 && <div className="text-center py-12 text-gray-500 flex flex-col items-center"><IconBriefcase className="w-12 h-12 text-gray-300 mb-2"/><p>{isLoadingData ? 'Đang tải dữ liệu...' : 'Không tìm thấy công việc phù hợp.'}</p></div>}
+          </div>
+        )}
+
+        {activeTab === 'team' && (
+          <div className="space-y-8">
+             {/* LIST CARD - SORTED BY PENDING */}
+             {!selectedEmployee ? (
+                <>
+                    <h2 className="font-bold text-gray-800 text-lg">Tiến độ nhân sự (Ưu tiên tồn đọng)</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {teamStats.map(({ user, todo, doing, done, overdue }) => (
+                        <div key={user.id} onClick={() => setSelectedEmployee(user)} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
+                            {/* Sort Indicator for top pending */}
+                            {todo > 0 && (
+                                <div className="absolute top-2 right-2 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 animate-pulse">
+                                    Cần xử lý: {todo}
+                                </div>
+                            )}
+                            <div className="flex items-center gap-4 mb-5">
+                            <img src={user.avatar} className="w-14 h-14 rounded-full border-2 border-white shadow-sm" />
+                            <div>
+                                <div className="font-bold text-gray-800 text-lg group-hover:text-brand-600 transition-colors">{user.name}</div>
+                                <div className="text-xs text-gray-500 font-medium">@{user.username}</div>
+                            </div>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                            <div className="bg-gray-50 py-2.5 rounded-lg border border-gray-100"><div className="font-bold text-base text-gray-800">{todo}</div><div className="text-gray-500 text-[10px] uppercase">Chờ</div></div>
+                            <div className="bg-blue-50 py-2.5 rounded-lg border border-blue-100"><div className="font-bold text-base text-blue-700">{doing}</div><div className="text-blue-600 text-[10px] uppercase">Làm</div></div>
+                            <div className="bg-green-50 py-2.5 rounded-lg border border-green-100"><div className="font-bold text-base text-green-700">{done}</div><div className="text-green-600 text-[10px] uppercase">Xong</div></div>
+                            <div className="bg-red-50 py-2.5 rounded-lg border border-red-100"><div className="font-bold text-base text-red-700">{overdue}</div><div className="text-red-600 text-[10px] uppercase">Trễ</div></div>
+                            </div>
+                        </div>
+                    ))}
+                    </div>
+
+                    {/* PRODUCTIVITY STATS (Responsive: Card on Mobile, Table on Desktop) */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="p-4 bg-gray-50 border-b border-gray-200">
+                             <h3 className="font-bold text-gray-800">Thống kê năng suất tháng {new Date().getMonth() + 1}</h3>
+                        </div>
+                        
+                        {/* Desktop View (Table) */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-6 py-3">Nhân viên</th>
+                                        <th className="px-6 py-3">Username</th>
+                                        <th className="px-6 py-3 text-center">Hoàn thành (Tháng)</th>
+                                        <th className="px-6 py-3 text-center">Tỷ lệ đúng hạn</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {teamStats.map(({ user, doneMonthCount, onTimeRate }) => (
+                                        <tr key={user.id} className="bg-white border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-gray-900">{user.name}</td>
+                                            <td className="px-6 py-4 text-gray-500">@{user.username}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="bg-green-100 text-green-800 px-2.5 py-0.5 rounded-full font-bold">{doneMonthCount}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <div className="w-16 bg-gray-200 rounded-full h-2.5">
+                                                        <div className={`h-2.5 rounded-full ${onTimeRate >= 80 ? 'bg-green-500' : onTimeRate >= 50 ? 'bg-yellow-400' : 'bg-red-500'}`} style={{ width: `${onTimeRate}%` }}></div>
+                                                    </div>
+                                                    <span className="font-bold">{onTimeRate}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile View (Cards) */}
+                        <div className="md:hidden p-4 space-y-4">
+                            {teamStats.map(({ user, doneMonthCount, onTimeRate }) => (
+                                <div key={user.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4">
+                                    <img src={user.avatar} className="w-12 h-12 rounded-full border border-gray-200 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-bold text-gray-900 truncate">{user.name}</div>
+                                        <div className="text-xs text-gray-500 truncate">@{user.username}</div>
+                                        <div className="mt-2 flex items-center justify-between text-xs">
+                                            <span className="text-gray-600">Xong tháng này: <b className="text-green-600">{doneMonthCount}</b></span>
+                                        </div>
+                                        <div className="mt-1 flex items-center gap-2">
+                                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                <div className={`h-full rounded-full ${onTimeRate >= 80 ? 'bg-green-500' : onTimeRate >= 50 ? 'bg-yellow-400' : 'bg-red-500'}`} style={{ width: `${onTimeRate}%` }}></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-gray-500 w-8 text-right">{onTimeRate}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </>
+             ) : (
+                <div>
+                   <button onClick={() => setSelectedEmployee(null)} className="mb-4 text-sm font-bold text-gray-500 hover:text-navy-800 flex items-center gap-1">&larr; Quay lại danh sách</button>
+                   <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex items-center gap-4">
+                      <img src={selectedEmployee.avatar} className="w-16 h-16 rounded-full" />
+                      <div><h2 className="text-xl font-bold text-navy-800">{selectedEmployee.name}</h2><p className="text-sm text-gray-500">Danh sách công việc cá nhân</p></div>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {selectedEmployeeTasks.map(task => (
+                        <TaskCard 
+                          key={task.id} 
+                          task={task} 
+                          currentUser={currentUser}
+                          allUsers={users}
+                          onStatusAction={handleStatusClick}
+                          onReassign={setReassignTask}
+                          onEdit={handleEditTask}
+                          onViewImage={setLightboxImage}
+                          onViewDetail={() => setViewingTask(task)}
+                        />
+                      ))}
+                   </div>
+                </div>
+             )}
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+           <div className="p-2 space-y-6 max-w-3xl mx-auto">
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 flex flex-col items-center relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-24 bg-navy-800"></div>
+                 <div className="relative z-10 flex flex-col items-center w-full">
+                   <div className="relative">
+                      <img src={currentUser.avatar} className="w-28 h-28 rounded-full mb-4 object-cover border-4 border-white shadow-md bg-white" />
+                      <button 
+                        onClick={() => profileInputRef.current?.click()} 
+                        className="absolute bottom-4 right-0 bg-white p-2 rounded-full shadow-md border border-gray-200 text-gray-600 hover:text-navy-800 transition-colors"
+                        title="Đổi ảnh đại diện"
+                      >
+                         <IconCamera className="w-5 h-5" />
+                      </button>
+                      <input 
+                         type="file" 
+                         ref={profileInputRef} 
+                         onChange={handleUpdateAvatar} 
+                         className="hidden" 
+                         accept="image/*" 
+                      />
+                   </div>
+                   
+                   <h2 className="text-2xl font-bold text-gray-800">{currentUser.name}</h2>
+                   <p className="text-sm font-medium text-gray-500 mb-6">{currentUser.companyName} • {currentUser.role === UserRole.MANAGER ? 'Quản lý' : 'Nhân viên'}</p>
+                   
+                   <div className="flex gap-4 w-full max-w-md">
+                      {currentUser.role === UserRole.MANAGER && (
+                        <button onClick={() => setShowChangePassModal(true)} className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-50 hover:border-gray-300 transition-colors flex items-center justify-center gap-2 shadow-sm"><IconKey className="w-4 h-4" /> Đổi mật khẩu</button>
+                      )}
+                      <button onClick={handleLogout} className="flex-1 py-3 bg-red-50 text-red-600 border border-red-100 font-bold rounded-xl text-sm hover:bg-red-100 transition-colors flex items-center justify-center gap-2 shadow-sm"><IconLogOut className="w-4 h-4" /> Đăng xuất</button>
+                   </div>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                   <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><IconAlert className="w-5 h-5 text-orange-500"/> Cài đặt Thông báo</h3>
+                   <div className="space-y-3">
+                     <button onClick={requestNotificationAccess} className="w-full flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all">
+                       <div className="flex items-center gap-3"><div className={`p-2 rounded-full ${notificationPermission === 'granted' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>{notificationPermission === 'granted' ? <IconCheck className="w-5 h-5" /> : <IconAlert className="w-5 h-5" />}</div><div className="text-left"><div className="font-bold text-sm text-gray-800">Quyền Thông báo & Badge</div><div className="text-xs text-gray-500">{notificationPermission === 'granted' ? 'Đã kích hoạt' : 'Chưa kích hoạt'}</div></div></div>
+                     </button>
+                     <button onClick={testBadge} className="w-full flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all">
+                       <div className="flex items-center gap-3"><div className="bg-blue-100 p-2 rounded-full text-blue-600"><IconCheck className="w-5 h-5" /></div><div className="text-left"><div className="font-bold text-sm text-gray-800">Kiểm tra Badge Icon</div><div className="text-xs text-gray-500">Test hiển thị số đỏ trên icon</div></div></div>
+                     </button>
+                   </div>
+                </div>
+                
+                {currentUser.role === UserRole.MANAGER && (
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                     <UserManagement currentUser={currentUser} companyUsers={users} onAddUser={handleAddUser} onDeleteUser={handleDeleteUser} />
+                  </div>
+                )}
+              </div>
+           </div>
+        )}
+      </main>
+
+      {currentUser.role === UserRole.MANAGER && (
+        <button onClick={() => setShowCreateModal(true)} className="fixed bottom-24 right-6 bg-navy-800 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-navy-900 transition-all z-20 border-4 border-white">
+          <IconPlus className="w-7 h-7" />
+        </button>
+      )}
+
+      {/* FOOTER NAV */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-20 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+        <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<IconHome />} label="Tổng quan" />
+        <NavButton active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} icon={<IconList />} label="Công việc" badge={myPendingTaskCount > 0 ? myPendingTaskCount : undefined} />
+        <NavButton active={activeTab === 'team'} onClick={() => setActiveTab('team')} icon={<IconBriefcase />} label="Nhân sự" />
+        <NavButton active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} icon={<IconUser />} label="Cá nhân" />
+      </nav>
+
+      {/* MODALS */}
+      {showCreateModal && <CreateTaskModal currentUser={currentUser} assignableUsers={users} onClose={() => setShowCreateModal(false)} onCreate={createTask} />}
+      {editingTask && <CreateTaskModal currentUser={currentUser} assignableUsers={users} onClose={() => setEditingTask(null)} onCreate={async () => {}} onEdit={submitEditTask} initialData={editingTask} />}
+      
+      {/* Detail Modal */}
+      {viewingTask && <TaskDetailModal task={viewingTask} users={users} onClose={() => setViewingTask(null)} onEdit={currentUser.role === UserRole.MANAGER ? (t) => { setViewingTask(null); handleEditTask(t); } : undefined} />}
+
+      {showCompleteModal && completingTask && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+           <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl transform transition-all scale-100">
+              <h3 className="text-lg font-bold text-navy-800 mb-2">Xác nhận hoàn thành</h3>
+              <p className="text-sm text-gray-500 mb-6">Bạn có muốn tải ảnh minh chứng (kết quả công việc) lên không?</p>
+              <div className="mb-6">
+                 <label className="block w-full border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-navy-500 hover:bg-gray-50 transition-colors group">
+                    {completionFile ? (
+                       <div className="relative">
+                          <img src={URL.createObjectURL(completionFile)} className="h-32 mx-auto object-contain rounded shadow-sm" />
+                          <button onClick={(e) => { e.preventDefault(); setCompletionFile(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600"><IconX className="w-3 h-3" /></button>
+                       </div>
+                    ) : (
+                       <div className="flex flex-col items-center text-gray-400 group-hover:text-navy-600">
+                          <IconImage className="w-10 h-10 mb-2" /><span className="text-sm font-bold">Chọn ảnh (Tùy chọn)</span>
+                       </div>
+                    )}
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files && setCompletionFile(e.target.files[0])} />
+                 </label>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowCompleteModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Hủy</button>
+                <button onClick={confirmCompleteTask} disabled={isSubmittingComplete} className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl flex justify-center items-center hover:bg-green-700 shadow-lg shadow-green-200">
+                  {isSubmittingComplete ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Hoàn thành'}
+                </button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {showChangePassModal && (
+         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+               <h3 className="text-lg font-bold text-navy-800 mb-4">Đổi mật khẩu đăng nhập</h3>
+               <p className="text-sm text-gray-500 mb-6">Nhập mật khẩu mới cho tài khoản của bạn.</p>
+               <input type="text" value={newSelfPass} onChange={(e) => setNewSelfPass(e.target.value)} placeholder="Mật khẩu mới" className="w-full p-3.5 border border-gray-300 rounded-xl mb-6 focus:ring-2 focus:ring-navy-800 outline-none" />
+               <div className="flex gap-3">
+                  <button onClick={() => setShowChangePassModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Hủy</button>
+                  <button onClick={handleChangeSelfPass} disabled={!newSelfPass} className="flex-1 py-3 bg-navy-800 text-white font-bold rounded-xl hover:bg-navy-900 shadow-lg disabled:opacity-50">Lưu</button>
+               </div>
+            </div>
+         </div>
+      )}
+
+      {lightboxImage && (
+         <div className="fixed inset-0 bg-black/95 z-[70] flex items-center justify-center p-4" onClick={() => setLightboxImage(null)}>
+            <img src={lightboxImage} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+            <button className="absolute top-6 right-6 text-white bg-white/20 hover:bg-white/40 p-2 rounded-full backdrop-blur-sm transition-colors"><IconX className="w-6 h-6" /></button>
+         </div>
+      )}
+
+      {reassignTask && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+           <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+              <h3 className="text-lg font-bold text-navy-800 mb-4">Giao lại việc cho</h3>
+              <div className="space-y-2 mb-6 max-h-[50vh] overflow-y-auto">
+                 {users.map(user => (
+                   <button key={user.id} onClick={() => handleReassign(user.id)} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-colors">
+                     <img src={user.avatar} className="w-10 h-10 rounded-full border border-gray-200" />
+                     <div className="text-left"><div className="font-bold text-gray-800">{user.name}</div><div className="text-xs text-gray-500">@{user.username}</div></div>
+                   </button>
+                 ))}
+              </div>
+              <button onClick={() => setReassignTask(null)} className="w-full py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Hủy bỏ</button>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const NavButton = ({ active, onClick, icon, label, badge }: any) => (
+  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all relative ${active ? 'text-navy-800 font-bold scale-105' : 'text-gray-400 hover:text-gray-600'}`}>
+    <div className="relative">
+       {React.cloneElement(icon, { className: 'w-6 h-6', strokeWidth: active ? 2.5 : 2 })}
+       {badge && <span className="absolute -top-1 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse border-2 border-white shadow-sm">{badge > 9 ? '9+' : badge}</span>}
+    </div>
+    <span className="text-[10px] tracking-wide">{label}</span>
+  </button>
+);
+
+interface TaskCardProps {
+  task: Task;
+  currentUser: User;
+  allUsers: User[];
+  onStatusAction: (task: Task) => void;
+  onReassign: (task: Task) => void;
+  onEdit: (task: Task) => void;
+  onViewImage: (url: string) => void;
+  onViewDetail: () => void; 
+  isDashboard?: boolean;
+}
+
+const TaskCard: React.FC<TaskCardProps> = ({ task, currentUser, allUsers, onStatusAction, onReassign, onEdit, onViewImage, onViewDetail, isDashboard }) => {
+  const overdue = task.status !== TaskStatus.COMPLETED && isOverdue(task.dueDate);
+  const dueSoon = task.status !== TaskStatus.COMPLETED && !overdue && isDueSoon(task.dueDate, 3);
+  
+  const isManager = currentUser.role === UserRole.MANAGER;
+  const isAssignee = currentUser.id === task.assigneeId;
+  const canEditStatus = isManager || isAssignee;
+  const canEditContent = isManager; // Only managers can edit
+  const showAction = isDashboard ? isAssignee : canEditStatus;
+  
+  const priorityColors = {
+    [TaskPriority.LOW]: 'bg-gray-100 text-gray-600',
+    [TaskPriority.MEDIUM]: 'bg-blue-50 text-blue-600',
+    [TaskPriority.HIGH]: 'bg-orange-50 text-orange-600',
+    [TaskPriority.URGENT]: 'bg-red-50 text-red-600',
+  };
+
+  const assignee = allUsers.find(u => u.id === task.assigneeId);
+  const creator = allUsers.find(u => u.id === task.creatorId);
+  const deadlineInfo = getDeadlineInfo(task.dueDate, task.status);
+
+  // Card Background Color Logic
+  let cardBgClass = 'bg-white border-gray-100';
+  if (task.status === TaskStatus.COMPLETED) {
+      cardBgClass = 'bg-green-50/50 border-green-100';
+  } else if (overdue) {
+      cardBgClass = 'bg-red-50 border-red-200';
+  } else if (dueSoon) {
+      cardBgClass = 'bg-orange-50 border-orange-200';
+  }
+
+  return (
+    <div 
+      className={`p-5 rounded-2xl border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group h-full flex flex-col cursor-pointer ${cardBgClass}`}
+      onClick={onViewDetail} 
+    >
+      {overdue && <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] px-3 py-1 rounded-bl-xl font-bold z-10 shadow-sm">Quá hạn</div>}
+      
+      <div className="flex justify-between items-start mb-3">
+        <span className={`text-[10px] px-2.5 py-1 rounded-md font-bold uppercase tracking-wider ${priorityColors[task.priority]}`}>{task.priority}</span>
+        <div className="flex flex-col items-end gap-1">
+          {deadlineInfo && <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${deadlineInfo.className}`}>{deadlineInfo.icon && <IconAlert className="w-3 h-3" />}{deadlineInfo.text}</span>}
+        </div>
+      </div>
+
+      <div className="flex justify-between items-start mb-2">
+         <h3 className="font-bold text-gray-900 text-base leading-tight flex-1 group-hover:text-navy-800 transition-colors">{task.title}</h3>
+         {canEditContent && (
+             <button onClick={(e) => { e.stopPropagation(); onEdit(task); }} className="text-gray-400 hover:text-navy-600 p-1 transition-colors"><IconEdit className="w-4 h-4" /></button>
+         )}
+      </div>
+      
+      <p className="text-sm text-gray-600 line-clamp-3 mb-4 whitespace-pre-line flex-1">{task.description}</p>
+      
+      {/* Attachments Preview (Max 3) */}
+      {task.attachments && task.attachments.length > 0 && (
+         <div className="flex gap-2 overflow-x-auto pb-2 mb-3 hide-scrollbar" onClick={(e) => e.stopPropagation()}>
+            {task.attachments.slice(0, 4).map((url, i) => (
+               <img key={i} src={url} onClick={() => onViewImage(url)} className="w-12 h-12 rounded-lg object-cover flex-shrink-0 cursor-pointer border border-gray-200 hover:opacity-80 transition-opacity" />
+            ))}
+            {task.attachments.length > 4 && <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center text-xs text-gray-500 font-bold border border-gray-200">+{task.attachments.length - 4}</div>}
+         </div>
+      )}
+
+      {/* Completion Proof */}
+      {task.status === TaskStatus.COMPLETED && task.completionImage && (
+         <div className="mb-4 bg-white/60 p-2.5 rounded-xl border border-green-200 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+             <img src={task.completionImage} onClick={() => onViewImage(task.completionImage!)} className="w-10 h-10 rounded-lg object-cover cursor-pointer hover:scale-105 transition-transform" />
+             <span className="text-xs text-green-700 font-bold">Minh chứng hoàn thành</span>
+         </div>
+      )}
+
+      <div className="mb-4 text-xs bg-white/50 p-3 rounded-xl text-gray-600 border border-gray-100/50">
+         <div className="flex justify-between mb-1.5"><span>Ngày giao:</span><span className="font-bold text-gray-800">{formatDateTime(task.createdAt)}</span></div>
+         <div className="flex justify-between"><span>Hạn chót:</span><span className={`font-bold ${overdue ? 'text-red-600' : 'text-gray-800'}`}>{formatDateTime(task.dueDate)}</span></div>
+      </div>
+      
+      <div className="flex items-start justify-between mb-4 border-b border-gray-100 pb-3">
+         {creator && (
+            <div className="flex flex-col gap-0.5" title="Người giao việc">
+                <span className="text-[10px] text-gray-400 uppercase font-bold">Người giao</span>
+                <span className="text-xs text-gray-700 font-medium break-words max-w-[100px]">{creator.name}</span>
+            </div>
+         )}
+         <div className="text-gray-300 text-xs self-center">→</div>
+         {assignee && (
+            <div className="flex flex-col gap-0.5 text-right items-end" title="Người thực hiện">
+                <span className="text-[10px] text-gray-400 uppercase font-bold">Người nhận</span>
+                <span className="text-xs text-blue-700 font-bold break-words max-w-[100px]">{assignee.name}</span>
+            </div>
+         )}
+      </div>
+
+      <div className="flex items-center justify-between mt-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2">
+           <span className={`w-2.5 h-2.5 rounded-full ${task.status === TaskStatus.COMPLETED ? 'bg-green-500' : task.status === TaskStatus.IN_PROGRESS ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+           <span className={`text-xs font-bold ${task.status === TaskStatus.COMPLETED ? 'text-green-600' : task.status === TaskStatus.IN_PROGRESS ? 'text-blue-600' : 'text-gray-500'}`}>
+              {task.status === TaskStatus.COMPLETED ? 'Đã xong' : task.status === TaskStatus.IN_PROGRESS ? 'Đang làm' : 'Chờ xử lý'}
+           </span>
+        </div>
+
+        <div className="flex gap-2">
+          {isManager && task.status !== TaskStatus.COMPLETED && (
+             <button onClick={() => onReassign(task)} className="text-xs font-bold text-gray-500 hover:text-navy-600 bg-white hover:bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-all" title="Giao lại"><IconShare className="w-3.5 h-3.5" /></button>
+          )}
+          {showAction && task.status !== TaskStatus.COMPLETED && (
+            <button
+              onClick={() => onStatusAction(task)}
+              className="text-xs font-bold bg-navy-50 hover:bg-navy-100 text-navy-800 px-4 py-2 rounded-lg border border-navy-100 transition-colors shadow-sm"
+            >
+              {task.status === TaskStatus.TODO ? 'Bắt đầu' : 'Hoàn thành'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
