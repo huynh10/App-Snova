@@ -1,0 +1,8 @@
+{
+  "name": "BizTask - Quản lý Công việc",
+  "description": "Ứng dụng quản lý công việc doanh nghiệp tối. Hỗ trợ phân quyền quản lý/nhân viên, cảnh báo hạn chót và tích hợp AI để hỗ trợ lập kế hoạch.",
+  "permissions": [],
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

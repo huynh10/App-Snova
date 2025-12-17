@@ -1,0 +1,27 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Mobile optimization */
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  /* Fix iOS rubber banding effect */
+  position: fixed; 
+  width: 100%;
+}
+
+/* Hide Scrollbar but allow scrolling */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* iOS Smooth Scrolling Fix */
+.overflow-y-auto, .overflow-x-auto, .custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
