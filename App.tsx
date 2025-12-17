@@ -157,7 +157,15 @@ export default function App() {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const profileInputRef = useRef<HTMLInputElement>(null);
 
-  const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
+  // FIX IOS CRASH: Safely initialize notification permission
+  // On iOS, 'Notification' object might not exist, causing ReferenceError
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() => {
+    if (typeof Notification !== 'undefined') {
+      return Notification.permission;
+    }
+    return 'default';
+  });
+
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
@@ -245,8 +253,10 @@ export default function App() {
       } else {
         if ('setAppBadge' in navigator) {
           if (count > 0) {
+            // @ts-ignore
             navigator.setAppBadge(count).catch(e => console.error("Set badge error", e));
           } else {
+             // @ts-ignore
             navigator.clearAppBadge().catch(e => console.error("Clear badge error", e));
           }
         }
@@ -275,7 +285,12 @@ export default function App() {
        alert("Đã yêu cầu quyền thông báo.");
        return;
     }
-    if (!('Notification' in window)) return;
+    // Safe check for Notification API
+    if (typeof Notification === 'undefined') {
+       alert("Trình duyệt này không hỗ trợ thông báo.");
+       return;
+    }
+
     const permission = await Notification.requestPermission();
     setNotificationPermission(permission);
     if (permission === 'granted') updateAppBadge(myPendingTaskCount);
@@ -289,8 +304,11 @@ export default function App() {
          alert(`[Native] Badge: ${randomNum}`);
        } else {
          if ('setAppBadge' in navigator) {
+            // @ts-ignore
             await navigator.setAppBadge(randomNum);
             alert(`[Web] Badge: ${randomNum}`);
+         } else {
+            alert("Trình duyệt không hỗ trợ App Badge API.");
          }
        }
      } catch (e: any) {
@@ -1454,7 +1472,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, currentUser, allUsers, onStat
   const dueSoon = task.status !== TaskStatus.COMPLETED && !overdue && isDueSoon(task.dueDate, 3);
   
   // Logic check completion overdue
-  const isCompletedLate = task.status === TaskStatus.COMPLETED && task.completedAt && new Date(task.completedAt) > new Date(task.dueDate);
+  const isCompletedLate = task.status === TaskStatus.COMPLETED && task.completionImage && task.completedAt && new Date(task.completedAt) > new Date(task.dueDate);
   
   const isManager = currentUser.role === UserRole.MANAGER;
   const isAssignee = currentUser.id === task.assigneeId;
