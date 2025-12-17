@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="vi">
   <head>
@@ -6,9 +7,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>BizTask Mobile</title>
     
-    <!-- CRITICAL FIX FOR IOS WHITE SCREEN: Polyfill 'global' variable -->
+    <!-- === CÔNG CỤ TÌM LỖI TRÊN IOS (ERUDA) === -->
+    <!-- Sau khi sửa xong lỗi, bạn có thể xóa đoạn script này đi -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
+
+    <!-- === CRITICAL FIX FOR IOS: POLYFILLS === -->
+    <!-- iOS WebKit rất khắt khe với các biến môi trường Node.js -->
     <script>
-      window.global = window;
+      // 1. Fix lỗi 'global is not defined'
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
+      
+      // 2. Fix lỗi 'process is not defined' (Thường gặp do Firebase/GenAI)
+      if (typeof process === 'undefined') {
+        window.process = {
+          env: { NODE_ENV: 'production' },
+          nextTick: function(col) { setTimeout(col, 0); }
+        };
+      }
     </script>
 
     <!-- PWA Settings -->
@@ -43,12 +61,10 @@
 }
 </script>
 </head>
-  <!-- Sử dụng h-[100dvh] để fix lỗi thanh địa chỉ che mất nội dung trên iOS -->
   <body class="bg-gray-50 text-gray-900 h-[100dvh] overflow-hidden flex flex-col">
     <div id="root" class="h-full flex flex-col"></div>
     <script type="module" src="/index.tsx"></script>
     <script>
-      // Đăng ký Service Worker để hỗ trợ PWA và Badging
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
