@@ -20,9 +20,9 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist', 
       sourcemap: false,
-      // QUAN TRỌNG: Hạ target xuống es2015 để chạy được trên iOS cũ/Safari
-      target: 'es2015',
-      cssTarget: 'chrome61', // Ngăn chặn lỗi CSS trên các trình duyệt cũ
+      // QUAN TRỌNG: Sử dụng es2020 và safari14 để đảm bảo hỗ trợ đầy đủ các tính năng hiện đại nhưng vẫn chạy được trên iOS WebKit
+      target: ['es2020', 'safari14'],
+      cssTarget: 'chrome61', 
     }
   }
 })

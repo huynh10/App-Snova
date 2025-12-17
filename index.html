@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>BizTask Mobile</title>
     
+    <!-- CRITICAL FIX FOR IOS WHITE SCREEN: Polyfill 'global' variable -->
+    <script>
+      window.global = window;
+    </script>
+
     <!-- PWA Settings -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#2563eb" />
@@ -37,7 +42,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <!-- Sử dụng h-[100dvh] để fix lỗi thanh địa chỉ che mất nội dung trên iOS -->
   <body class="bg-gray-50 text-gray-900 h-[100dvh] overflow-hidden flex flex-col">
