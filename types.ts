@@ -1,6 +1,8 @@
+
 export enum UserRole {
-  MANAGER = 'MANAGER',
-  EMPLOYEE = 'EMPLOYEE'
+  DIRECTOR = 'DIRECTOR', // Giám đốc (Người tạo công ty)
+  MANAGER = 'MANAGER',   // Quản lý (Chức vụ mới)
+  EMPLOYEE = 'EMPLOYEE'  // Nhân viên
 }
 
 export enum TaskStatus {

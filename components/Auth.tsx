@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { IconBuilding, IconUser, IconLock, IconDatabase } from './Icons';
@@ -69,7 +70,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegisterCompany }) => {
       password: password,
       companyName: companyName,
       companyId: Math.random().toString(36).substr(2, 9),
-      role: UserRole.MANAGER,
+      role: UserRole.DIRECTOR, // Chức vụ cao nhất cho người tạo
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`,
       email: `${username}@${companyName.replace(/\s+/g, '').toLowerCase()}.com`
     };

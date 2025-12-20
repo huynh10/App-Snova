@@ -168,6 +168,11 @@ export default function App() {
 
   const isNative = Capacitor.isNativePlatform();
 
+  // Role Checks helpers
+  const isDirector = currentUser?.role === UserRole.DIRECTOR;
+  const isManager = currentUser?.role === UserRole.MANAGER;
+  const hasManagementPrivileges = isDirector || isManager;
+
   useEffect(() => {
     const session = getStoredSession();
     if (session) {
@@ -237,9 +242,9 @@ export default function App() {
   };
 
   const myPendingTaskCount = useMemo(() => {
-    if (!currentUser || currentUser.role === UserRole.MANAGER) return 0;
+    if (!currentUser || hasManagementPrivileges) return 0;
     return tasks.filter(t => t.assigneeId === currentUser.id && t.status === TaskStatus.TODO).length;
-  }, [tasks, currentUser]);
+  }, [tasks, currentUser, hasManagementPrivileges]);
 
   const updateAppBadge = async (count: number) => {
     try {
@@ -455,11 +460,11 @@ export default function App() {
   
   const myRelevantTasks = useMemo(() => {
     if (!currentUser) return [];
-    if (currentUser.role === UserRole.MANAGER) {
+    if (hasManagementPrivileges) {
       return tasks;
     }
     return tasks.filter(t => t.assigneeId === currentUser.id);
-  }, [tasks, currentUser]);
+  }, [tasks, currentUser, hasManagementPrivileges]);
 
   const filteredTasks = useMemo(() => {
     let result = [...myRelevantTasks];
@@ -606,7 +611,7 @@ export default function App() {
 
     if (!currentUser) return defaultStats;
 
-    const sourceTasks = currentUser.role === UserRole.MANAGER ? tasks : myRelevantTasks;
+    const sourceTasks = hasManagementPrivileges ? tasks : myRelevantTasks;
 
     const pending = sourceTasks.filter(t => t.status === TaskStatus.TODO).length;
     const inProgress = sourceTasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length;
@@ -649,11 +654,11 @@ export default function App() {
         overdueRate,
         totalCreatedMonth
     };
-  }, [tasks, myRelevantTasks, currentUser]);
+  }, [tasks, myRelevantTasks, currentUser, hasManagementPrivileges]);
 
   const chartData = useMemo(() => {
      if (!currentUser) return [];
-     const sourceTasks = currentUser.role === UserRole.MANAGER ? tasks : myRelevantTasks;
+     const sourceTasks = hasManagementPrivileges ? tasks : myRelevantTasks;
      const data = [];
      const now = new Date();
      
@@ -676,7 +681,7 @@ export default function App() {
         });
      }
      return data;
-  }, [tasks, myRelevantTasks, currentUser]);
+  }, [tasks, myRelevantTasks, currentUser, hasManagementPrivileges]);
 
   // Calculations for Trend Line in Chart
   const chartConfig = useMemo(() => {
@@ -731,8 +736,8 @@ export default function App() {
   }, [users, tasks]);
 
   const leaderboardStats = useMemo(() => {
-      // Exclude Managers from leaderboard
-      const lb = teamStats.filter(stat => stat.user.role !== UserRole.MANAGER);
+      // Exclude Managers and Directors from leaderboard
+      const lb = teamStats.filter(stat => stat.user.role === UserRole.EMPLOYEE);
       return lb.sort((a, b) => b.doneMonthCount - a.doneMonthCount).slice(0, 5); 
   }, [teamStats]);
   
@@ -817,7 +822,9 @@ export default function App() {
 
             {/* 1. GREETING */}
             <div className="text-sm text-gray-500 font-medium text-center lg:text-left">
-                Chào <span className="text-navy-800 font-bold text-base">{currentUser.name}</span>, chúc bạn một ngày làm việc hiệu quả!
+                Chào <span className="text-navy-800 font-bold text-base">
+                  {isDirector ? 'Giám đốc ' : isManager ? 'Quản lý ' : ''}{currentUser.name}
+                </span>, chúc bạn một ngày làm việc hiệu quả!
             </div>
 
             {/* 2. DEADLINE WARNING MODULE */}
@@ -1045,7 +1052,7 @@ export default function App() {
           <div className="space-y-4">
             <div className="flex gap-2 mb-4">
                 <div className="relative flex-1">
-                  <input type="text" placeholder={currentUser.role === UserRole.MANAGER ? "Tìm công việc toàn công ty..." : "Tìm trong việc của tôi..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-navy-800 outline-none text-sm bg-white" />
+                  <input type="text" placeholder={hasManagementPrivileges ? "Tìm công việc toàn công ty..." : "Tìm trong việc của tôi..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-navy-800 outline-none text-sm bg-white" />
                   <IconSearch className="absolute left-4 top-4 w-4 h-4 text-gray-400" />
                 </div>
                 <button 
@@ -1319,10 +1326,10 @@ export default function App() {
                    </div>
                    
                    <h2 className="text-2xl font-bold text-gray-800">{currentUser.name}</h2>
-                   <p className="text-sm font-medium text-gray-500 mb-6">{currentUser.companyName} • {currentUser.role === UserRole.MANAGER ? 'Quản lý' : 'Nhân viên'}</p>
+                   <p className="text-sm font-medium text-gray-500 mb-6">{currentUser.companyName} • {isDirector ? 'Giám Đốc' : isManager ? 'Quản lý' : 'Nhân viên'}</p>
                    
                    <div className="flex gap-4 w-full max-w-md">
-                      {currentUser.role === UserRole.MANAGER && (
+                      {hasManagementPrivileges && (
                         <button onClick={() => setShowChangePassModal(true)} className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-50 hover:border-gray-300 transition-colors flex items-center justify-center gap-2 shadow-sm"><IconKey className="w-4 h-4" /> Đổi mật khẩu</button>
                       )}
                       <button onClick={handleLogout} className="flex-1 py-3 bg-red-50 text-red-600 border border-red-100 font-bold rounded-xl text-sm hover:bg-red-100 transition-colors flex items-center justify-center gap-2 shadow-sm"><IconLogOut className="w-4 h-4" /> Đăng xuất</button>
@@ -1343,7 +1350,8 @@ export default function App() {
                    </div>
                 </div>
                 
-                {currentUser.role === UserRole.MANAGER && (
+                {/* Chỉ Giám Đốc mới thấy mục quản lý nhân sự */}
+                {isDirector && (
                   <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
                      <UserManagement currentUser={currentUser} companyUsers={users} onAddUser={handleAddUser} onDeleteUser={handleDeleteUser} />
                   </div>
@@ -1353,7 +1361,8 @@ export default function App() {
         )}
       </main>
 
-      {currentUser.role === UserRole.MANAGER && (
+      {/* Director và Manager đều thấy nút tạo Task */}
+      {hasManagementPrivileges && (
         <button onClick={() => setShowCreateModal(true)} className="fixed bottom-24 right-6 bg-navy-800 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-navy-900 transition-all z-20 border-4 border-white">
           <IconPlus className="w-7 h-7" />
         </button>
@@ -1372,7 +1381,7 @@ export default function App() {
       {editingTask && <CreateTaskModal currentUser={currentUser} assignableUsers={users} onClose={() => setEditingTask(null)} onCreate={async () => {}} onEdit={submitEditTask} initialData={editingTask} />}
       
       {/* Detail Modal */}
-      {viewingTask && <TaskDetailModal task={viewingTask} users={users} onClose={() => setViewingTask(null)} onEdit={currentUser.role === UserRole.MANAGER ? (t) => { setViewingTask(null); handleEditTask(t); } : undefined} />}
+      {viewingTask && <TaskDetailModal task={viewingTask} users={users} onClose={() => setViewingTask(null)} onEdit={hasManagementPrivileges ? (t) => { setViewingTask(null); handleEditTask(t); } : undefined} />}
 
       {showCompleteModal && completingTask && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
@@ -1474,10 +1483,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, currentUser, allUsers, onStat
   // Logic check completion overdue
   const isCompletedLate = task.status === TaskStatus.COMPLETED && task.completionImage && task.completedAt && new Date(task.completedAt) > new Date(task.dueDate);
   
+  // Checks for permissions inside card
+  const isDirector = currentUser.role === UserRole.DIRECTOR;
   const isManager = currentUser.role === UserRole.MANAGER;
+  const hasManagementPrivileges = isDirector || isManager;
   const isAssignee = currentUser.id === task.assigneeId;
-  const canEditStatus = isManager || isAssignee;
-  const canEditContent = isManager; // Only managers can edit
+
+  // Director và Manager có thể edit status và content
+  const canEditStatus = hasManagementPrivileges || isAssignee;
+  const canEditContent = hasManagementPrivileges;
+  
   const showAction = isDashboard ? isAssignee : canEditStatus;
   
   const priorityColors = {
@@ -1578,7 +1593,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, currentUser, allUsers, onStat
         </div>
 
         <div className="flex gap-2">
-          {isManager && task.status !== TaskStatus.COMPLETED && (
+          {hasManagementPrivileges && task.status !== TaskStatus.COMPLETED && (
              <button onClick={() => onReassign(task)} className="text-xs font-bold text-gray-500 hover:text-navy-600 bg-white hover:bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-all" title="Giao lại"><IconShare className="w-3.5 h-3.5" /></button>
           )}
           {showAction && task.status !== TaskStatus.COMPLETED && (

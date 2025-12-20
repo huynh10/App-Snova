@@ -102,7 +102,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser, companyUse
 
                 if (companyUsers.some(u => u.username === username)) continue;
 
-                const role = roleStr === 'MANAGER' ? UserRole.MANAGER : UserRole.EMPLOYEE;
+                // Lưu ý: CSV template cũ dùng MANAGER/EMPLOYEE, trong logic mới MANAGER là Quản lý
+                let role = UserRole.EMPLOYEE;
+                if (roleStr === 'MANAGER' || roleStr === 'QUANLY') role = UserRole.MANAGER;
                 
                 const newUser: User = {
                     id: Math.random().toString(36).substr(2, 9) + i,
@@ -272,6 +274,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser, companyUse
               <div className="min-w-0 pr-2">
                 <div className="font-bold text-gray-800 text-sm flex items-center gap-2 truncate">
                    {user.name}
+                   {user.role === UserRole.DIRECTOR && (
+                     <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded border border-red-200 flex-shrink-0">GĐ</span>
+                   )}
                    {user.role === UserRole.MANAGER && (
                      <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200 flex-shrink-0">QL</span>
                    )}
