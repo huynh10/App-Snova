@@ -33,7 +33,11 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ currentUser, assignab
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  const canAssign = currentUser.role === UserRole.MANAGER;
+  // Robust check for Director/Manager privileges
+  // Handles both Enum comparison and String comparison (just in case)
+  const isDirector = currentUser.role === UserRole.DIRECTOR || (currentUser.role as string) === 'DIRECTOR';
+  const isManager = currentUser.role === UserRole.MANAGER || (currentUser.role as string) === 'MANAGER';
+  const canAssign = isDirector || isManager;
 
   // Load initial data if editing
   useEffect(() => {
@@ -54,7 +58,9 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ currentUser, assignab
         setDueDate('');
       }
       
+      // Ensure assignee ID is set correctly from existing task
       setAssigneeId(initialData.assigneeId);
+      
       setPriority(initialData.priority);
       if (initialData.attachments) {
         setExistingImages(initialData.attachments);
@@ -332,7 +338,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ currentUser, assignab
              </div>
           </div>
 
-          {/* Assignee (Manager Only) */}
+          {/* Assignee (Director/Manager Only) */}
           {canAssign && (
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">Giao cho nhân viên</label>
@@ -342,11 +348,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ currentUser, assignab
                 className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-navy-800 outline-none text-sm bg-white"
                 disabled={isUploading}
               >
-                {assignableUsers.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.username})
-                  </option>
-                ))}
+                {assignableUsers && assignableUsers.length > 0 ? (
+                  assignableUsers.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.username})
+                    </option>
+                  ))
+                ) : (
+                   <option value={currentUser.id}>Không tìm thấy nhân viên (Mặc định: {currentUser.name})</option>
+                )}
               </select>
             </div>
           )}

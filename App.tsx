@@ -934,7 +934,7 @@ export default function App() {
                     onClick={() => navigateToMonthStats('OVERDUE')}
                     className="h-40 bg-rose-500/85 backdrop-blur-md rounded-br-[3rem] rounded-bl-2xl rounded-tr-2xl rounded-tl-[1rem] p-5 flex flex-col justify-between shadow-[0_8px_0_0_#be123c] active:shadow-none active:translate-y-[8px] transition-all cursor-pointer relative overflow-hidden group border-b-2 border-rose-700/50 items-end"
                   >
-                     <div className="absolute bottom-0 left-0 p-8 bg-white/20 rounded-tr-full transform -translate-x-4 translate-y-4 group-hover:scale-110 transition-transform"></div>
+                     <div className="absolute bottom-0 left-0 p-8 bg-white/20 rounded-tr-full transform -translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform"></div>
                      <span className="text-white font-bold uppercase text-xs tracking-wider text-right">Quá hạn</span>
                      <div className="flex justify-between items-end text-white w-full">
                         <div className="bg-white/20 p-2 rounded-lg"><IconAlert className="w-5 h-5" /></div>
