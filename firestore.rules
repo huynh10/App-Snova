@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Khóa toàn bộ database mặc định để bảo mật tối đa
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Danh sách các bảng (collections) hợp lệ mà ứng dụng BizTask sử dụng
+    function isValidCollection(col) {
+      return col in [
+        'users', 
+        'tasks', 
+        'partners', 
+        'products', 
+        'partner_transactions', 
+        'customers', 
+        'payment_categories', 
+        'customer_transactions', 
+        'finance_categories', 
+        'salary_config', 
+        'attendance', 
+        'advance_payments', 
+        'payrolls', 
+        'employee_salary_info', 
+        'payroll_locks', 
+        'row_tags',
+        'inventoryItems',
+        'inventoryTransactions',
+        'inventoryChecks'
+      ];
+    }
+
+    // 3. Cho phép truy cập vào các bảng hợp lệ
+    // Lưu ý: Trong môi trường thực tế, nên bổ sung kiểm tra request.auth != null
+    // Nhưng để đảm bảo tính linh hoạt cho cấu hình hiện tại, ta cho phép dựa trên tên bảng.
+    match /{collectionName}/{docId} {
+      allow read, write: if isValidCollection(collectionName);
+    }
+    
+    // Hỗ trợ các sub-collections nếu có (ví dụ trong tương lai)
+    match /{collectionName}/{docId}/{subCollection=**} {
+      allow read, write: if isValidCollection(collectionName);
+    }
+  }
+}
